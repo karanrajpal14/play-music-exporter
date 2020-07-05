@@ -30,7 +30,7 @@ mma.login(oauth_credentials=man_creds)
 
 if not mm.is_authenticated():
     print("Not authenticated")
-    sys.exit()
+    sys.exit(1)
 
 
 def is_downloadable(url):
@@ -47,37 +47,7 @@ def is_downloadable(url):
     return True
 
 
-def download_song(song_id, file_name):
-    stream_url = mm.get_stream_url(song_id, device_id=DEVICE_ID)
-    downloadable = is_downloadable(stream_url)
-    if downloadable:
-        r = requests.get(stream_url, allow_redirects=True)
-        download_url = r.url
-        content_type = r.headers.get('content-type')
-        content_length = int(r.headers.get('content-length'))
-        try:
-            open(file_name, 'wb+').write(r.content)
-            downloaded_bytes = os.path.getsize(file_name)
-            if content_length == downloaded_bytes:
-                print(f"Successfully downloaded {file_name}")
-            else:
-                print(f"Incorrect file size for {file_name}. Should be {content_length} bytes but downloaded only {downloaded_bytes} bytes.")
-                print("Please delete the file and try again.")
-                sys.exit(1)
-        except:
-            print(f"Unable to write {file_name}")
-    else:
-        print(f"Unable to download {file_name}!")
-        print("Exiting")
-        sys.exit(1)
-
-
-
-all_songs = mm.get_all_songs()[:1]
-
-
-for song in all_songs:
-    song_id = song.get("id")
+def download_song(stream_url):
     album = song.get("album")
     album_artist = song.get("albumArtist")
     folder_name = f"{MUSIC_DIR}/{album_artist}_{album}"
@@ -93,9 +63,36 @@ for song in all_songs:
         print(f"{file_name} is already downloaded")
     else:
         print(f"Downloading {file_name}")
-        os.makedirs(folder_name)
-        download_song(song_id, relative_file_path)
 
+        r = requests.get(stream_url, allow_redirects=True)
+        try:
+            os.makedirs(folder_name)
+            open(file_name, 'wb+').write(r.content)
+
+            content_length = int(r.headers.get('content-length'))
+            downloaded_bytes = os.path.getsize(file_name)
+
+            if content_length == downloaded_bytes:
+                print(f"Successfully downloaded {file_name}!")
+            else:
+                print(f"Incorrect file size for {file_name}. Should be {content_length} bytes but downloaded only {downloaded_bytes} bytes.")
+                print("Please delete the file and try again.")
+                sys.exit(1)
+        except:
+            print(f"Unable to write to {relative_file_path}. Please check your file/directory permissions.")
+
+
+all_songs = mm.get_all_songs()[:1]
+
+
+for song in all_songs:
+    song_id = song.get("id")
+    stream_url = mm.get_stream_url(song_id, device_id=DEVICE_ID)
+
+    if is_downloadable(stream_url):
+        download_song(stream_url)
+    else:
+        print(f"Unable to download song {song.get('title')}")  
 
 
 #     # add song id to delete list
