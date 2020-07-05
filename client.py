@@ -1,11 +1,15 @@
-from gmusicapi import Mobileclient, Musicmanager
-from pprint import pprint
-from dotenv import load_dotenv
-import requests
 import re
 import sys
 import os
+import time
+from random import randint
+
+import requests
+from dotenv import load_dotenv
+
+from gmusicapi import Mobileclient, Musicmanager
 import eyed3
+
 
 load_dotenv()
 
@@ -62,10 +66,13 @@ def download_song(stream_url):
     if os.path.exists(relative_file_path):
         print(f"{file_name} is already downloaded")
     else:
-        print(f"Downloading {file_name}")
-
-        r = requests.get(stream_url, allow_redirects=True)
         try:
+            r = requests.get(stream_url, allow_redirects=True)
+            wait_time = randint(5, 60)
+            print(f"Waiting for {wait_time}s to prevent throttling the API")
+            time.sleep(wait_time)
+
+            print(f"Downloading {file_name}")
             os.makedirs(folder_name)
             open(file_name, 'wb+').write(r.content)
 
@@ -73,7 +80,7 @@ def download_song(stream_url):
             downloaded_bytes = os.path.getsize(file_name)
 
             if content_length == downloaded_bytes:
-                print(f"Successfully downloaded {file_name}!")
+                print(f"Successfully downloaded {file_name}")
             else:
                 print(f"Incorrect file size for {file_name}. Should be {content_length} bytes but downloaded only {downloaded_bytes} bytes.")
                 print("Please delete the file and try again.")
@@ -82,7 +89,7 @@ def download_song(stream_url):
             print(f"Unable to write to {relative_file_path}. Please check your file/directory permissions.")
 
 
-all_songs = mm.get_all_songs()[:1]
+all_songs = mm.get_all_songs()[:2]
 
 
 for song in all_songs:
