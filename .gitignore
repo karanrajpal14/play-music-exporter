@@ -3,3 +3,4 @@
 **/.vscode/**
 .env
 all_songs.json
+downloaded.txt
