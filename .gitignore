@@ -1,0 +1,4 @@
+**/creds/**
+**/music/**
+**/.vscode/**
+.env
