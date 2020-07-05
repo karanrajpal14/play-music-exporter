@@ -7,30 +7,23 @@ from random import randint
 import requests
 from dotenv import load_dotenv
 
-from gmusicapi import Mobileclient, Musicmanager
+from gmusicapi import Mobileclient
 import eyed3
-
 
 load_dotenv()
 
-CREDS_DIR="./creds"
-DEVICE_ID=os.environ.get("DEV_ID")
-mobile_creds=f"{CREDS_DIR}/mobileclient.cred"
-man_creds=f"{CREDS_DIR}/mma.cred"
+CREDS_DIR = "./creds"
+DEVICE_ID = os.environ.get("DEV_ID")
+mobile_creds = f"{CREDS_DIR}/mobileclient.cred"
 
-MUSIC_DIR="./music"
+MUSIC_DIR = "./music"
 
 mm = Mobileclient()
-mma = Musicmanager()
 
 if not os.path.exists(mobile_creds):
     mm.perform_oauth(storage_filepath=mobile_creds)
 
-if not os.path.exists(man_creds):
-    mma.perform_oauth(storage_filepath=man_creds)
-
 mm.oauth_login(oauth_credentials=mobile_creds, device_id=DEVICE_ID)
-mma.login(oauth_credentials=man_creds)
 
 if not mm.is_authenticated():
     print("Not authenticated")
@@ -82,15 +75,18 @@ def download_song(stream_url):
             if content_length == downloaded_bytes:
                 print(f"Successfully downloaded {file_name}")
             else:
-                print(f"Incorrect file size for {file_name}. Should be {content_length} bytes but downloaded only {downloaded_bytes} bytes.")
+                print(
+                    f"Incorrect file size for {file_name}. Should be {content_length} bytes but downloaded only {downloaded_bytes} bytes."
+                )
                 print("Please delete the file and try again.")
                 sys.exit(1)
         except Exception as e:
-            print(f"Error {e}. Unable to write to {relative_file_path}. Please check your file/directory permissions.")
+            print(
+                f"Error {e}. Unable to write to {relative_file_path}. Please check your file/directory permissions."
+            )
 
 
 all_songs = mm.get_all_songs()[:2]
-
 
 for song in all_songs:
     song_id = song.get("id")
@@ -99,8 +95,8 @@ for song in all_songs:
     if is_downloadable(stream_url):
         download_song(stream_url)
     else:
-        print(f"Unable to download song {song.get('title')}")  
+        print(f"Unable to download song {song.get('title')}")
 
-
-#     # add song id to delete list
-#     # invoke delete from library once done
+# Save ID3 tags
+# add song id to delete list
+# invoke delete from library once done
