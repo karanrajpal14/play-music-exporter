@@ -73,11 +73,11 @@ def download_song(stream_url):
             time.sleep(wait_time)
 
             print(f"Downloading {file_name}")
-            os.makedirs(folder_name)
-            open(file_name, 'wb+').write(r.content)
+            os.makedirs(folder_name, exist_ok=True)
+            open(relative_file_path, 'wb+').write(r.content)
 
             content_length = int(r.headers.get('content-length'))
-            downloaded_bytes = os.path.getsize(file_name)
+            downloaded_bytes = os.path.getsize(relative_file_path)
 
             if content_length == downloaded_bytes:
                 print(f"Successfully downloaded {file_name}")
@@ -85,8 +85,8 @@ def download_song(stream_url):
                 print(f"Incorrect file size for {file_name}. Should be {content_length} bytes but downloaded only {downloaded_bytes} bytes.")
                 print("Please delete the file and try again.")
                 sys.exit(1)
-        except:
-            print(f"Unable to write to {relative_file_path}. Please check your file/directory permissions.")
+        except Exception as e:
+            print(f"Error {e}. Unable to write to {relative_file_path}. Please check your file/directory permissions.")
 
 
 all_songs = mm.get_all_songs()[:2]
