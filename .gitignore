@@ -2,3 +2,4 @@
 **/music/**
 **/.vscode/**
 .env
+all_songs.json

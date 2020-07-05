@@ -1,7 +1,7 @@
-import re
 import sys
 import os
 import time
+import json
 from random import randint
 
 import requests
@@ -56,6 +56,9 @@ def download_song(stream_url):
     file_name = f"{track_number:0>2}_{title}_{artist}_({year}).mp3"
     relative_file_path = f"{folder_name}/{file_name}"
 
+    play_count = song.get("playCount") or 0
+    disc_number = song.get("discNumber")
+
     if os.path.exists(relative_file_path):
         print(f"{file_name} is already downloaded")
     else:
@@ -74,6 +77,18 @@ def download_song(stream_url):
 
             if content_length == downloaded_bytes:
                 print(f"Successfully downloaded {file_name}")
+                print("Adding ID3 tags")
+                saved_song = eyed3.load(relative_file_path)
+                saved_song.initTag()
+                saved_song.tag.artist = artist
+                saved_song.tag.album = album
+                saved_song.tag.album_artist = album_artist
+                saved_song.tag.title = title
+                saved_song.tag.track_num = track_number
+                saved_song.tag.play_count = play_count
+                saved_song.tag.disc_num = disc_number
+                saved_song.tag.save()
+                print(f"Added ID3 tags for {file_name}")
             else:
                 print(
                     f"Incorrect file size for {file_name}. Should be {content_length} bytes but downloaded only {downloaded_bytes} bytes."
@@ -86,7 +101,11 @@ def download_song(stream_url):
             )
 
 
-all_songs = mm.get_all_songs()[:2]
+all_songs = mm.get_all_songs()
+with open('./all_songs.json', 'w', encoding='utf-8') as f:
+    json.dump(all_songs, f, ensure_ascii=False, indent=4)
+print("Saved all_songs.json to project dir")
+print()
 
 for song in all_songs:
     song_id = song.get("id")
@@ -96,7 +115,9 @@ for song in all_songs:
         download_song(stream_url)
     else:
         print(f"Unable to download song {song.get('title')}")
+    print()
 
-# Save ID3 tags
+print("Done!")
+
 # add song id to delete list
 # invoke delete from library once done
