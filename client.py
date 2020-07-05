@@ -104,8 +104,10 @@ def download_song(stream_url):
 
 
 downloaded = []
+downloaded_logfile = open('downloaded.txt', 'a+')
 all_songs = mm.get_all_songs()
 print(f"Found {len(all_songs)} songs in your library")
+
 with open('./all_songs.json', 'w', encoding='utf-8') as f:
     json.dump(all_songs, f, ensure_ascii=False, indent=4)
 print("Saved all_songs.json to project dir")
@@ -118,17 +120,13 @@ for song in all_songs:
     if is_downloadable(stream_url):
         download_song(stream_url)
         downloaded.append(song_id)
+        if POST_DOWNLOAD_DELETE:
+            mm.delete_songs(song_id)
+            downloaded_logfile.write('%s\n' % song_id)
     else:
         print(f"Unable to download song {song.get('title')}")
     print()
 
 print(f"Successfully downloaded {len(downloaded)} songs")
-with open('downloaded.txt', 'a+') as f:
-    for song_id in downloaded:
-        f.write('%s\n' % song_id)
-
-if POST_DOWNLOAD_DELETE:
-    print("Deleting downloaded songs from Play Music library")
-    mm.delete_songs(downloaded)
 
 print("Done!")
