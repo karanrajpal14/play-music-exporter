@@ -33,10 +33,7 @@ This script does a few basic things such as:
             "friendlyName": "...",
             "type": "ANDROID",
             "lastAccessedTimeMs": "..."
-        },
-        ...
-        ...
-        ...
+        }
     ]
     ```
 
