@@ -1,6 +1,7 @@
 **/creds/**
 **/music/**
 **/.vscode/**
+**/logs/**
 .env
-all_songs.json
-downloaded.txt
+all_songs*.json
+downloaded*.txt

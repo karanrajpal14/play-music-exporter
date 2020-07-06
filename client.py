@@ -2,6 +2,7 @@ import sys
 import os
 import time
 import json
+from datetime import datetime
 from random import randint
 
 import requests
@@ -17,12 +18,25 @@ DEVICE_ID = os.environ.get("DEV_ID")
 mobile_creds = f"{CREDS_DIR}/mobileclient.cred"
 
 MUSIC_DIR = "./music"
-POST_DOWNLOAD_DELETE = False
+LOGS_DIR = "./logs"
+NOW = datetime.now()
+DOWNLOADED_LOG_FILENAME = f"{LOGS_DIR}/downloaded_{NOW}.txt"
+LIBRARY_LOG_FILENAME = f"{LOGS_DIR}/all_songs_{NOW}.json"
+POST_DOWNLOAD_DELETE = True
 
 mm = Mobileclient()
 
 if not os.path.exists(mobile_creds):
     mm.perform_oauth(storage_filepath=mobile_creds)
+    devices = json.dumps(mm.get_registered_devices(),
+                         ensure_ascii=False,
+                         indent=4)
+    print(
+        "Here are your registered devices.",
+        "Input one of id's into the .env file DEVICE_ID field without the '0x' and re-run the script."
+    )
+    print(devices)
+    sys.exit(1)
 
 mm.oauth_login(oauth_credentials=mobile_creds, device_id=DEVICE_ID)
 
@@ -104,13 +118,13 @@ def download_song(stream_url):
 
 
 downloaded = []
-downloaded_logfile = open('downloaded.txt', 'a+')
+downloaded_logfile = open(DOWNLOADED_LOG_FILENAME, 'w+')
 all_songs = mm.get_all_songs()
-print(f"Found {len(all_songs)} songs in your library")
-
-with open('./all_songs.json', 'w', encoding='utf-8') as f:
+print(
+    f"Found {len(all_songs)} songs in your library. Saved a summary to {LIBRARY_LOG_FILENAME}."
+)
+with open(LIBRARY_LOG_FILENAME, 'w+', encoding='utf-8') as f:
     json.dump(all_songs, f, ensure_ascii=False, indent=4)
-print("Saved all_songs.json to project dir")
 print()
 
 for song in all_songs:
