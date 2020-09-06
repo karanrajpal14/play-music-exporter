@@ -69,13 +69,15 @@ def download_song(stream_url):
     track_number = song.get("trackNumber")
     year = song.get("year")
     file_name = f"{track_number:0>2}_{title}_{artist}_({year}).mp3"
-    relative_file_path = f"{folder_name}/{file_name}"
+    keepcharacters = (' ','.','_')
+    safe_file_name = "".join(c for c in file_name if c.isalnum() or c in keepcharacters).rstrip()
+    relative_file_path = f"{folder_name}/{safe_file_name}"
 
     play_count = song.get("playCount") or 0
     disc_number = song.get("discNumber")
 
     if os.path.exists(relative_file_path):
-        print(f"{file_name} is already downloaded")
+        print(f"{safe_file_name} is already downloaded")
     else:
         try:
             r = requests.get(stream_url, allow_redirects=True)
@@ -83,7 +85,7 @@ def download_song(stream_url):
             print(f"Waiting for {wait_time}s to prevent throttling the API")
             time.sleep(wait_time)
 
-            print(f"Downloading {file_name}")
+            print(f"Downloading {safe_file_name}")
             os.makedirs(folder_name, exist_ok=True)
             open(relative_file_path, 'wb+').write(r.content)
 
@@ -91,7 +93,7 @@ def download_song(stream_url):
             downloaded_bytes = os.path.getsize(relative_file_path)
 
             if content_length == downloaded_bytes:
-                print(f"Successfully downloaded {file_name}")
+                print(f"Successfully downloaded {safe_file_name}")
                 print("Adding ID3 tags")
                 saved_song = eyed3.load(relative_file_path)
                 saved_song.initTag()
@@ -103,10 +105,10 @@ def download_song(stream_url):
                 saved_song.tag.play_count = play_count
                 saved_song.tag.disc_num = disc_number
                 saved_song.tag.save()
-                print(f"Added ID3 tags for {file_name}")
+                print(f"Added ID3 tags for {safe_file_name}")
             else:
                 print(
-                    f"Incorrect file size for {file_name}. Should be {content_length} bytes but downloaded only {downloaded_bytes} bytes."
+                    f"Incorrect file size for {safe_file_name}. Should be {content_length} bytes but downloaded only {downloaded_bytes} bytes."
                 )
                 print("Please delete the file and try again.")
                 sys.exit(1)
@@ -120,27 +122,35 @@ def download_song(stream_url):
 downloaded = []
 downloaded_logfile = open(DOWNLOADED_LOG_FILENAME, 'w+')
 all_songs = mm.get_all_songs()
-print(
-    f"Found {len(all_songs)} songs in your library. Saved a summary to {LIBRARY_LOG_FILENAME}."
-)
-with open(LIBRARY_LOG_FILENAME, 'w+', encoding='utf-8') as f:
-    json.dump(all_songs, f, ensure_ascii=False, indent=4)
-print()
+current_song_count = 0
+all_songs_count = len(all_songs)
 
-for song in all_songs:
-    song_id = song.get("id")
-    stream_url = mm.get_stream_url(song_id, device_id=DEVICE_ID)
-
-    if is_downloadable(stream_url):
-        download_song(stream_url)
-        downloaded.append(song_id)
-        if POST_DOWNLOAD_DELETE:
-            mm.delete_songs(song_id)
-            downloaded_logfile.write('%s\n' % song_id)
-    else:
-        print(f"Unable to download song {song.get('title')}")
+if all_songs_count:
+    print(
+        f"Found {len(all_songs)} songs in your library. Saved a summary to {LIBRARY_LOG_FILENAME}."
+    )
+    with open(LIBRARY_LOG_FILENAME, 'w+', encoding='utf-8') as f:
+        json.dump(all_songs, f, ensure_ascii=False, indent=4)
     print()
 
-print(f"Successfully downloaded {len(downloaded)} songs")
+    for song in all_songs:
+        current_song_count += 1
+        print(f"Downloading track {current_song_count} of {all_songs_count}")
+        song_id = song.get("id")
+        stream_url = mm.get_stream_url(song_id, device_id=DEVICE_ID)
+
+        if is_downloadable(stream_url):
+            download_song(stream_url)
+            downloaded.append(song_id)
+            if POST_DOWNLOAD_DELETE:
+                mm.delete_songs(song_id)
+                downloaded_logfile.write('%s\n' % song_id)
+        else:
+            print(f"Unable to download song {song.get('title')}")
+        print()
+
+    print(f"Successfully downloaded {len(downloaded)} songs")
+else:
+    print("Empty library. Please add some music to your library and re-run this script.")
 
 print("Done!")
